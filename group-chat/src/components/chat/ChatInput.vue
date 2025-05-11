@@ -115,4 +115,21 @@ export default {
   margin-left: 6px;
   font-size: 0.9em;
 }
+
+@media (max-width: 600px) {
+  .chat-input {
+    flex-wrap: nowrap;
+    padding: 6px 6px;
+  }
+  .chat-input input {
+    min-width: 0;
+    font-size: 13px;
+    padding: 10px 10px;
+    margin-right: 6px;
+  }
+  .chat-input button {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
 </style>

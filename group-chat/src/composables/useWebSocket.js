@@ -9,8 +9,15 @@ export function useWebSocket({ onMessage }) {
 
   const connect = () => {
     connectionStatus.value = 'connecting';
-    socket.value = new WebSocket('ws://localhost:60000/websocket');
-
+    // 根据url判断是否使用本地地址
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const host =
+      // 或者使用本地IP地址
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1'
+        ? 'localhost:60007'
+        : window.location.hostname;
+    socket.value = new WebSocket(`${protocol}://${host}/websocket`);
     socket.value.onopen = () => {
       connectionStatus.value = 'connected';
       console.log('WebSocket连接已建立');

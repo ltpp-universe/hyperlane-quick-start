@@ -18,7 +18,7 @@
 
 <script>
 export default {
-  name: 'VirtualList',
+  name: 'ScrollList',
   props: {
     // 列表数据
     items: {

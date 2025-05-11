@@ -58,7 +58,7 @@ export default {
 .chat-input input {
   flex: 1;
   min-width: 200px;
-  padding: 12px 18px;
+  padding: 8px 16px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 24px;
   outline: none;
@@ -81,7 +81,7 @@ export default {
 }
 
 .chat-input button {
-  padding: 12px 24px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, #4a9c5e 0%, #2e7d32 100%);
   color: white;
   border: none;

@@ -1,5 +1,5 @@
 <template>
-  <VirtualList
+  <ScrollList
     class="chat-messages"
     ref="messageContainer"
     :items="messages"
@@ -26,7 +26,6 @@
             </div>
           </div>
         </template>
-
         <!-- 自己发送的消息 -->
         <template v-else>
           <div class="message-info self">
@@ -43,20 +42,20 @@
         </template>
       </div>
     </template>
-  </VirtualList>
+  </ScrollList>
 </template>
 
 <script>
 import MessageAvatar from './MessageAvatar.vue';
 import MessageHeader from './MessageHeader.vue';
-import VirtualList from './VirtualList.vue';
+import ScrollList from './ScrollList.vue';
 
 export default {
   name: 'MessageList',
   components: {
     MessageAvatar,
     MessageHeader,
-    VirtualList,
+    ScrollList,
   },
   props: {
     messages: {
@@ -109,7 +108,7 @@ export default {
 <style scoped>
 .chat-messages {
   flex: 1;
-  padding: 20px;
+  padding: 4px 4px;
   background-color: rgb(242, 242, 242);
   scrollbar-width: thin;
 }
@@ -158,13 +157,10 @@ export default {
   word-break: break-word;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   background-color: white;
-  border-bottom-left-radius: 4px;
 }
 
 .message-content.self {
   background: rgb(0, 153, 255);
   color: white;
-  border-bottom-right-radius: 4px;
-  border-bottom-left-radius: 18px;
 }
 </style>

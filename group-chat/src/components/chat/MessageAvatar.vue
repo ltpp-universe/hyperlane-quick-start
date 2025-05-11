@@ -25,8 +25,8 @@ export default {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #a5d6a7;
-  color: #1b5e20;
+  background: linear-gradient(135deg, #e8fff5 0%, #ffffff 100%);
+  color: rgb(55, 135, 64);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,7 +42,7 @@ export default {
 }
 
 .avatar.self {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  background: linear-gradient(135deg, #3a8dde 0%, #1ee6ca 100%);
   color: white;
 }
 </style>

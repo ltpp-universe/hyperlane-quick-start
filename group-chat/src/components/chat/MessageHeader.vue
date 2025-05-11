@@ -38,22 +38,26 @@ export default {
   align-items: center;
   margin-bottom: 6px;
   padding: 0 2px;
-  height: 20px; /* 固定高度确保一致性 */
-  margin-top: 8px; /* 调整消息头部位置，与头像对齐 */
+  margin-top: 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  width: 100%;
 }
 
 .sender {
   font-weight: 600;
-  font-size: 0.85em;
+  font-size: 0.56em;
   color: rgb(168, 168, 168);
   user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .time {
-  font-size: 0.7em;
+  font-size: 0.56em;
   color: rgb(170, 170, 170);
-  margin-left: 8px;
-  margin-right: 8px;
   user-select: none;
+  flex-shrink: 0;
 }
 </style>

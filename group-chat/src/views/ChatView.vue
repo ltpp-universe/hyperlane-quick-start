@@ -1,6 +1,5 @@
 <template>
   <div class="chat-view">
-    <ChatHeader title="群聊" icon="💬" />
     <MessageList
       :messages="messages"
       :isNearBottom="isNearBottom"
@@ -25,7 +24,6 @@
 </template>
 
 <script>
-import ChatHeader from '../components/chat/ChatHeader.vue';
 import MessageList from '../components/chat/MessageList.vue';
 import ChatInput from '../components/chat/ChatInput.vue';
 import ConnectionStatus from '../components/chat/ConnectionStatus.vue';
@@ -35,7 +33,6 @@ import { useWebSocket } from '../composables/useWebSocket';
 export default {
   name: 'ChatView',
   components: {
-    ChatHeader,
     MessageList,
     ChatInput,
     ConnectionStatus,

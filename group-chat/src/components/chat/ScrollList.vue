@@ -64,6 +64,23 @@ export default {
   overflow-y: auto;
   position: relative;
   scrollbar-width: thin;
+  height: 100%;
+  /* 优化滚动条样式 */
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* 针对Webkit浏览器（Chrome、Safari等）优化滚动条 */
+.list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.list-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.list-container::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .list-content {

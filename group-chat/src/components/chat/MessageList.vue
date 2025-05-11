@@ -114,8 +114,8 @@ export default {
 }
 
 .message {
-  margin-top: 20px;
-  margin-bottom: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
   display: flex;
   animation: fadeIn 0.3s ease-in-out;
   align-items: flex-start;

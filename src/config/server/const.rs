@@ -1,6 +1,6 @@
 use super::*;
 
-pub(crate) const SERVER_PORT: usize = 60000;
+pub(crate) const SERVER_PORT: usize = 60007;
 pub(crate) const SERVER_HOST: &str = "0.0.0.0";
 pub(crate) const SERVER_WEB_SOCKET_BUFFER_SIZE: usize = 4096;
 pub(crate) const SERVER_HTTP_LINE_BUFFER_SIZE: usize = 4096;

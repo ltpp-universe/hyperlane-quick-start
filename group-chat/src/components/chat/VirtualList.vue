@@ -62,6 +62,12 @@ export default {
       scrollTop: 0,
       // 每项的实际高度缓存
       itemHeights: [],
+      // 滚动节流定时器
+      scrollTimer: null,
+      // 高度缓存是否已初始化
+      heightsInitialized: false,
+      // 累计高度缓存，用于优化查找
+      accumulatedHeights: [],
     };
   },
   computed: {
@@ -75,17 +81,26 @@ export default {
         };
       });
     },
-    // 列表总高度
+    // 列表总高度 - 优化计算方式
     totalHeight() {
       if (this.items.length === 0) return 0;
 
-      // 如果有缓存的高度，使用缓存计算总高度
+      // 如果累计高度缓存已初始化，直接使用最后一项的累计高度
+      if (this.heightsInitialized && this.accumulatedHeights.length > 0) {
+        return (
+          this.accumulatedHeights[this.accumulatedHeights.length - 1] ||
+          this.items.length * this.estimatedItemHeight
+        );
+      }
+
+      // 如果有缓存的高度但累计高度未初始化，使用缓存计算总高度
       if (this.itemHeights.length > 0) {
         // 已测量项的总高度
-        const measuredHeight = this.itemHeights.reduce(
-          (sum, height) => sum + height,
-          0
-        );
+        let measuredHeight = 0;
+        for (let i = 0; i < this.itemHeights.length; i++) {
+          measuredHeight += this.itemHeights[i] || this.estimatedItemHeight;
+        }
+
         // 未测量项的估计总高度
         const unmeasuredCount = this.items.length - this.itemHeights.length;
         const unmeasuredHeight = unmeasuredCount * this.estimatedItemHeight;
@@ -99,7 +114,15 @@ export default {
   },
   watch: {
     items: {
-      handler() {
+      handler(newItems) {
+        // 当items变化时，重新初始化高度缓存
+        if (newItems.length !== this.itemHeights.length) {
+          this.itemHeights = new Array(newItems.length).fill(
+            this.estimatedItemHeight
+          );
+          this.heightsInitialized = false;
+          this.initAccumulatedHeights();
+        }
         this.updateVisibleItems();
       },
       deep: true,
@@ -107,12 +130,17 @@ export default {
   },
   mounted() {
     this.clientHeight = this.$refs.container.clientHeight;
-    this.updateVisibleItems();
 
     // 初始化每项的高度估计值
     this.itemHeights = new Array(this.items.length).fill(
       this.estimatedItemHeight
     );
+
+    // 初始化累计高度缓存
+    this.initAccumulatedHeights();
+
+    // 更新可见项
+    this.updateVisibleItems();
 
     // 使用ResizeObserver监听容器大小变化
     if (typeof ResizeObserver !== 'undefined') {
@@ -134,7 +162,7 @@ export default {
     }
   },
   methods: {
-    // 滚动事件处理
+    // 滚动事件处理 - 添加节流处理
     onScroll(e) {
       this.scrollTop = e.target.scrollTop;
 
@@ -148,7 +176,58 @@ export default {
       // 通知父组件滚动状态变化
       this.$emit('handleScroll', isNearBottom);
 
-      this.updateVisibleItems();
+      // 使用节流处理滚动事件，避免频繁更新导致性能问题
+      if (this.scrollTimer) {
+        clearTimeout(this.scrollTimer);
+      }
+
+      this.scrollTimer = setTimeout(() => {
+        this.updateVisibleItems();
+        this.scrollTimer = null;
+      }, 16); // 约60fps的更新频率
+    },
+
+    // 初始化累计高度缓存
+    initAccumulatedHeights() {
+      this.accumulatedHeights = new Array(this.items.length);
+      let accumHeight = 0;
+
+      for (let i = 0; i < this.items.length; i++) {
+        accumHeight += this.itemHeights[i] || this.estimatedItemHeight;
+        this.accumulatedHeights[i] = accumHeight;
+      }
+
+      this.heightsInitialized = true;
+    },
+
+    // 更新累计高度缓存
+    updateAccumulatedHeights(startIdx) {
+      if (!this.heightsInitialized) {
+        this.initAccumulatedHeights();
+        return;
+      }
+
+      // 只更新从startIdx开始的累计高度
+      let accumHeight =
+        startIdx > 0 ? this.accumulatedHeights[startIdx - 1] : 0;
+
+      for (let i = startIdx; i < this.items.length; i++) {
+        accumHeight += this.itemHeights[i] || this.estimatedItemHeight;
+        this.accumulatedHeights[i] = accumHeight;
+      }
+    },
+
+    // 使用累计高度缓存获取指定索引的累计高度
+    getAccumulatedHeight(index) {
+      if (index < 0) return 0;
+      if (index >= this.items.length) return this.totalHeight;
+
+      if (!this.heightsInitialized || !this.accumulatedHeights[index]) {
+        // 如果缓存未初始化或无效，重新计算
+        this.updateAccumulatedHeights(0);
+      }
+
+      return this.accumulatedHeights[index];
     },
 
     // 更新可见项 - 优化性能
@@ -166,33 +245,39 @@ export default {
       const topOffset = 100;
       const scrollTopWithOffset = Math.max(0, this.scrollTop - topOffset);
 
+      // 确保累计高度缓存已初始化
+      if (!this.heightsInitialized) {
+        this.initAccumulatedHeights();
+      }
+
       // 使用二分查找优化查找第一个可见项的过程
       if (this.items.length > 50) {
-        // 对于大列表使用二分查找
+        // 对于大列表使用二分查找 + 累计高度缓存
         let low = 0;
         let high = this.items.length - 1;
 
         while (low <= high) {
           const mid = Math.floor((low + high) / 2);
-          let height = 0;
+          const midHeight = this.getAccumulatedHeight(mid - 1) || 0;
+          const itemHeight = this.itemHeights[mid] || this.estimatedItemHeight;
 
-          // 计算到mid位置的累计高度
-          for (let i = 0; i < mid; i++) {
-            height += this.itemHeights[i] || this.estimatedItemHeight;
-          }
-
-          if (height < scrollTopWithOffset) {
-            if (
-              height + (this.itemHeights[mid] || this.estimatedItemHeight) >
-              scrollTopWithOffset
-            ) {
-              startIndex = mid;
-              currentHeight = height;
-              break;
-            }
+          if (
+            midHeight < scrollTopWithOffset &&
+            midHeight + itemHeight >= scrollTopWithOffset
+          ) {
+            startIndex = mid;
+            currentHeight = midHeight;
+            break;
+          } else if (midHeight < scrollTopWithOffset) {
             low = mid + 1;
           } else {
             high = mid - 1;
+          }
+
+          // 防止无限循环
+          if (low > high) {
+            startIndex = low;
+            currentHeight = this.getAccumulatedHeight(low - 1) || 0;
           }
         }
       } else {
@@ -213,26 +298,27 @@ export default {
       // 考虑缓冲区，但不超出数组范围
       this.startIndex = Math.max(0, startIndex - this.bufferSize);
 
-      // 计算可视区域能容纳的项数
+      // 计算可视区域能容纳的项数 - 使用累计高度优化
       let visibleCount = 0;
       let visibleHeight = 0;
+
+      // 预先多渲染一些项，防止快速滚动时出现白屏
+      const targetHeight = this.clientHeight + 200; // 增加下方渲染区域
 
       for (let i = startIndex; i < this.items.length; i++) {
         const height = this.itemHeights[i] || this.estimatedItemHeight;
         visibleHeight += height;
         visibleCount++;
 
-        // 增加下方100px的渲染偏移量
-        if (visibleHeight > this.clientHeight + 100) {
-          // 增加额外空间以防止快速滚动时出现白屏
+        if (visibleHeight > targetHeight) {
           break;
         }
       }
 
-      // 加上缓冲区
+      // 加上缓冲区，并确保至少渲染10个项
       this.endIndex = Math.min(
         this.items.length - 1,
-        startIndex + visibleCount + this.bufferSize
+        Math.max(startIndex + visibleCount + this.bufferSize, startIndex + 10)
       );
 
       // 更新项高度
@@ -244,16 +330,25 @@ export default {
     // 更新项高度缓存
     updateItemHeights() {
       const nodes = this.$el.querySelectorAll('.virtual-list-content > *');
+      let needsUpdate = false;
 
       Array.from(nodes).forEach((node, index) => {
         const realIndex = this.startIndex + index;
+        if (realIndex >= this.items.length) return; // 防止索引越界
+
         const height = node.offsetHeight;
 
         // 只有当高度变化时才更新
         if (height && this.itemHeights[realIndex] !== height) {
           this.itemHeights[realIndex] = height;
+          needsUpdate = true;
         }
       });
+
+      // 只有在高度有变化时才更新累计高度缓存
+      if (needsUpdate) {
+        this.updateAccumulatedHeights(this.startIndex);
+      }
     },
 
     // 滚动到指定索引
@@ -268,10 +363,17 @@ export default {
       this.$refs.container.scrollTop = position;
     },
 
-    // 滚动到底部
+    // 滚动到底部 - 优化性能
     scrollToBottom() {
       if (this.$refs.container) {
-        this.$refs.container.scrollTop = this.$refs.container.scrollHeight;
+        // 使用requestAnimationFrame确保在下一帧渲染前执行滚动
+        // 这样可以避免在大量消息加载时的白屏问题
+        requestAnimationFrame(() => {
+          this.$refs.container.scrollTop = this.$refs.container.scrollHeight;
+
+          // 确保可见项已正确更新
+          this.updateVisibleItems();
+        });
       }
     },
   },
